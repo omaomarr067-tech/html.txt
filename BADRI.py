@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مركز الأمجاد للطباعة ومستلزمات الأفراح</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <style>
+        :root {
+            --primary-wedding: #7A1C1C; /* عنابي للأفراح */
+            --primary-print: #1A365D;    /* كحلي رسمي للطباعة */
+            --accent-gold: #D4AF37;      /* لمسة ذهبية فخمة لشريط العيد */
+            --dark-color: #222;
+            --light-bg: #f4f6f8;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; padding: 0; background-color: var(--light-bg); color: var(--dark-color);
+        }
+
+        /* شريط التبريكات والتهنئة بالعيد */
+        .eid-marquee {
+            background: linear-gradient(90deg, #8a1c1c, #1a365d, #8a1c1c);
+            color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+            padding: 10px 0;
+            font-weight: bold;
+            font-size: 11pt;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+        .eid-marquee span {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee-speed 25s linear infinite;
+        }
+        @keyframes marquee-speed {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-wedding), var(--primary-print));
+            color: white; text-align: center; padding: 35px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        header h1 { margin: 0; font-size: 24pt; font-weight: bold; }
+        header .sub-title { margin: 8px 0 5px 0; font-size: 13pt; opacity: 0.9; font-weight: 500; }
+        header .address { margin: 5px 0 0 0; font-size: 11pt; opacity: 0.8; font-style: italic; }
+        
+        .tabs-container {
+            display: flex; justify-content: center; background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 99;
+        }
+        .tab-btn {
+            padding: 15px 25px; cursor: pointer; font-weight: bold; font-size: 12pt;
+            border: none; background: none; color: #666; border-bottom: 3px solid transparent; transition: all 0.3s;
+        }
+        .tab-btn.active { border-bottom-color: var(--primary-wedding); color: var(--primary-wedding); }
+
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+        
+        .product-card {
+            background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            overflow: hidden; border: 1px solid #eef2f5; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.3s;
+        }
+        .product-card:hover { transform: translateY(-5px); }
+        .product-img { width: 100%; height: 200px; object-fit: cover; background-color: #e9ecef; }
+        .product-info { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .product-title { font-size: 13pt; font-weight: bold; margin: 0 0 5px 0; }
+        .product-desc { font-size: 10.5pt; color: #666; margin-bottom: 10px; line-height: 1.4; }
+        .product-meta-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .product-price { color: var(--primary-wedding); font-size: 13pt; font-weight: bold; }
+        .product-qty { background: #e2e8f0; font-size: 9.5pt; padding: 3px 8px; border-radius: 20px; font-weight: bold; }
+        
+        .whatsapp-btn {
+            display: flex; align-items: center; justify-content: center; background-color: #25D366; color: white;
+            text-decoration: none; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 11pt; box-shadow: 0 3px 8px rgba(37, 211, 102, 0.2);
+        }
+        .whatsapp-btn svg { width: 16px; height: 16px; margin-left: 6px; fill: white; }
+
+        footer { text-align: center; padding: 40px 20px; margin-top: 5px; }
+        .admin-toggle-btn { background: none; border: none; color: #aaa; cursor: pointer; font-size: 10pt; text-decoration: underline; }
+        .admin-toggle-btn:hover { color: #666; }
+
+        .admin-section { display: none; background: white; max-width: 600px; margin: 20px auto; padding: 25px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); border: 2px solid var(--primary-print); }
+        .admin-section h2 { text-align: center; margin-top: 0; color: var(--primary-print); }
+        label { font-weight: bold; display: block; margin-top: 12px; font-size: 11pt; }
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
+        .submit-btn { width: 100%; padding: 12px; background: var(--primary-print); color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 12pt; margin-top: 15px; cursor: pointer; }
+        
+        /* معاينة الرابط المباشر */
+        .image-preview { display: none; width: 100%; height: 150px; object-fit: cover; border-radius: 6px; margin-top: 8px; border: 1px dashed #ccc; }
+
+        .admin-list { margin-top: 25px; border-top: 2px dashed #eee; padding-top: 15px; }
+        .admin-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        .admin-item-info { font-size: 11pt; }
+        .admin-btns { display: flex; gap: 5px; }
+        .edit-btn { background: #FFA500; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 9pt; font-weight: bold; }
+        .delete-btn { background: #D9534F; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 9pt; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="eid-marquee">
+        <span>✨ مركز الأمجاد يهنئكم بحلول العيد السعيد.. كل عام وأنتم بخير وعساكم من عواده ✨  |  مستعدون لتلبية جميع طلباتكم بأعلى جودة وأسرع وقت 🎈 🎉  |  أهلاً ومرحباً بكم زبائننا الكرام 💖</span>
+    </div>
+
+    <header>
+        <h1>مركز الأمجاد</h1>
+        <div class="sub-title">للطباعة ومستلزمات الأفراح والمناسبات</div>
+        <div class="address">📍 العنوان: شرعب الرونة - المعشار - مقابل معرض الإخوة</div>
+    </header>
+
+    <div class="tabs-container">
+        <button class="tab-btn active" onclick="filterCategory('wedding')">قسم مستلزمات الأفراح</button>
+        <button class="tab-btn" onclick="filterCategory('print')">قسم خدمات الطباعة الرقمية</button>
+    </div>
+
+    <div class="container">
+        <div id="productsContainer" class="products-grid"></div>
+    </div>
+
+    <div id="adminSection" class="admin-section">
+        <h2>لوحة إدارة وتعديل متجر مركز الأمجاد</h2>
+        <form id="productForm">
+            <input type="hidden" id="productId">
+            
+            <label>اسم المنتج / الخدمة:</label>
+            <input type="text" id="title" required placeholder="مثال: كروت أفراح فاخرة حفر ليزر">
+
+            <label>القسم:</label>
+            <select id="category">
+                <option value="wedding">قسم مستلزمات الأفراح</option>
+                <option value="print">قسم الادوات المكتبيه</option>
+            </select>
+
+            <label>السعر بالريال:</label>
+            <input type="text" id="price" required placeholder="مثال: 500 ريال أو حسب الكمية">
+
+            <label>حالة توفر المنتج أو الكمية:</label>
+            <input type="text" id="qty" required placeholder="مثال: متوفر، بالطلب، جاهز خلال يومين، إلخ">
+
+            <label>وصف وتفاصيل العرض (اختياري):</label>
+            <textarea id="desc" rows="2" placeholder="اكتب تفاصيل ومواصفات هنا..."></textarea>
+
+            <label>رابط الصورة المباشر (رابط من جوجل درايف أو أي موقع رفع):</label>
+            <input type="url" id="imageUrl" placeholder="ضع رابط الصورة هنا (https://...)" oninput="previewImageUrl()">
+            <img id="imgPreview" class="image-preview" alt="معاينة الصورة من الرابط">
+
+            <input type="hidden" id="phone" value="96773269355">
+
+            <button type="submit" id="submitBtn" class="submit-btn">نشر وعرض المنتج فوراً</button>
+        </form>
+
+        <div class="admin-list">
+            <h3>التحكم السريع (حذف وتعديل البضاعة الحالية)</h3>
+            <div id="adminProductsList"></div>
+        </div>
+    </div>
+
+    <footer>
+        <button class="admin-toggle-btn" onclick="checkAdminPassword()">الدخول للوحة الإدارة 🔒</button>
+    </footer>
+
+    <script>
+        const firebaseConfig = {
+            databaseURL: "https://al-amjad-center-default-rtdb.firebaseio.com/"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        let currentCategory = 'wedding';
+        const mySecretPassword = "77W7@"; 
+
+        // دالة لمعاينة رابط الصورة عند كتابته أو لصقه
+        function previewImageUrl() {
+            const urlInput = document.getElementById('imageUrl').value;
+            const preview = document.getElementById('imgPreview');
+            
+            if (urlInput.trim() !== "") {
+                preview.src = urlInput;
+                preview.style.display = "block";
+            } else {
+                preview.style.display = "none";
+            }
+        }
+
+        function checkAdminPassword() {
+            const adminPanel = document.getElementById('adminSection');
+            if (adminPanel.style.display === "block") {
+                adminPanel.style.display = "none";
+                return;
+            }
+            const pass = prompt("الرجاء إدخال كلمة سر المدير للدخول:");
+            if (pass === mySecretPassword) {
+                adminPanel.style.display = "block";
+                window.scrollTo({ top: adminPanel.offsetTop, behavior: 'smooth' });
+            } else if (pass !== null) {
+                alert("كلمة السر خاطئة! عذراً، هذا القسم مخصص لمدير المركز فقط.");
+            }
+        }
+
+        function loadProducts() {
+            const container = document.getElementById('productsContainer');
+            database.ref('products').on('value', (snapshot) => {
+                container.innerHTML = '';
+                const data = snapshot.val();
+                let hasProducts = false;
+
+                for (let id in data) {
+                    const p = data[id];
+                    if (p.category === currentCategory) {
+                        hasProducts = true;
+                        const whatsappMessage = encodeURIComponent(`السلام عليكم مركز الأمجاد للطباعة والأفراح، أريد الاستفسار عن منتج: ${p.title} - السعر المعروض: ${p.price}`);
+                        const whatsappLink = `https://wa.me/${p.phone || '96773269355'}?text=${whatsappMessage}`;
+
+                        container.innerHTML += `
+                            <div class="product-card">
+                                <img src="${p.image || 'https://via.placeholder.com/300x200?text=No+Image'}" class="product-img" alt="${p.title}">
+                                <div class="product-info">
+                                    <div>                                        <div class="product-title">${p.title}</div>
+                                        <div class="product-desc">${p.desc || ''}</div>
+                                    </div>
+                                    <div>
+                                        <div class="product-meta-row">
+                                            <div class="product-price">${p.price}</div>
+                                            <div class="product-qty">${p.qty || 'متوفر'}</div>
+                                        </div>
+                                        <a href="${whatsappLink}" class="whatsapp-btn" target="_blank">
+                                            <svg viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.5-5.754-1.446L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.885-6.963C16.528 2.028 14.061.966 11.454.966c-5.443 0-9.874 4.375-9.878 9.802-.001 1.748.463 3.454 1.343 4.967l-.983 3.595 3.711-.966zm12.108-6.11c-.328-.164-1.94-.954-2.242-1.063-.301-.109-.522-.164-.742.164-.219.328-.85 1.063-1.041 1.281-.192.219-.384.246-.712.082-1.399-.699-2.309-1.222-3.114-2.602-.212-.365.212-.34.607-1.127.066-.137.033-.257-.016-.355-.05-.099-.443-1.063-.607-1.457-.159-.384-.334-.333-.459-.34l-.394-.008c-.137 0-.361.051-.548.257-.188.206-.717.7-.717 1.709 0 1.009.734 1.984.836 2.121.102.137 1.444 2.201 3.495 3.086.488.21.87.336 1.167.431.49.155.936.133 1.288.08.393-.058 1.94-.793 2.214-1.523.274-.73.274-1.355.192-1.485-.082-.131-.274-.164-.602-.328z"/></svg>
+                                            اطلب عبر الواتساب
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                if (!hasProducts) container.innerHTML = '<p style="text-align:center; width:100%; color:#666;">لا توجد منتجات معروضة حالياً في هذا القسم.</p>';
+            });
+        }
+
+        const productForm = document.getElementById('productForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const productIdInput = document.getElementById('productId');
+
+        productForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = productIdInput.value;
+            const pData = {
+                title: document.getElementById('title').value,
+                category: document.getElementById('category').value,
+                price: document.getElementById('price').value,
+                qty: document.getElementById('qty').value,
+                desc: document.getElementById('desc').value,
+                image: document.getElementById('imageUrl').value, // حفظ رابط الصورة المباشر هنا
+                phone: document.getElementById('phone').value
+            };
+
+            if (id) {
+                database.ref('products/' + id).set(pData, (err) => { if(!err) { alert('تم التعديل والتحديث للموقع!'); resetForm(); } });
+            } else {
+                database.ref('products').push().set(pData, (err) => { if(!err) { alert('تم النشر بنجاح وظهر للزبائن!'); resetForm(); } });
+            }
+        });
+
+        database.ref('products').on('value', (snapshot) => {
+            const list = document.getElementById('adminProductsList');
+            list.innerHTML = '';
+            const data = snapshot.val();
+            if(!data) return;
+
+            for (let id in data) {
+                const p = data[id];
+                const displayCat = p.category === 'wedding' ? 'مستلزمات أفراح' : 'طباعة رقمية';
+                list.innerHTML += `
+                    <div class="admin-item">
+                        <div class="admin-item-info"><strong>${p.title}</strong> (${p.price}) - <small>${displayCat}</small></div>
+                        <div class="admin-btns">
+                            <button class="edit-btn" onclick="startEdit('${id}','${p.title}','${p.category}','${p.price}','${p.qty}','${p.desc}','${p.image}','${p.phone}')">تعديل</button>
+                            <button class="delete-btn" onclick="deleteProduct('${id}')">حذف</button>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        function deleteProduct(id) {
+            if (confirm('حذف هذا المنتج نهائياً من العرض؟')) { database.ref('products/' + id).remove(); }
+        }
+
+        function startEdit(id, title, cat, price, qty, desc, img, phone) {
+            productIdInput.value = id;
+            document.getElementById('title').value = title;
+            document.getElementById('category').value = cat;
+            document.getElementById('price').value = price;
+            document.getElementById('qty').value = qty === 'undefined' ? '' : qty;
+            document.getElementById('desc').value = desc === 'undefined' ? '' : desc;
+            
+            const preview = document.getElementById('imgPreview');
+            if (img && img !== 'undefined' && img.trim() !== "") {
+                document.getElementById('imageUrl').value = img;
+                preview.src = img;
+                preview.style.display = "block";
+            } else {
+                document.getElementById('imageUrl').value = "";
+                preview.style.display = "none";
+            }
+            
+            submitBtn.innerText = "تحديث وتعديل المنتج الآن";
+            submitBtn.style.background = "#FFA500";
+            window.scrollTo({ top: document.getElementById('adminSection').offsetTop, behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            productForm.reset(); 
+            productIdInput.value = ''; 
+            document.getElementById('imgPreview').style.display = "none";
+            document.getElementById('phone').value = "96773269355";
+            submitBtn.innerText = "نشر وعرض المنتج فوراً"; 
+            submitBtn.style.background = "var(--primary-print)";
+        }
+
+        function filterCategory(cat) {
+            currentCategory = cat;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            loadProducts();                                          
+        }
+        window.onload = loadProducts;
+    </script>
+</body>
+</html>
